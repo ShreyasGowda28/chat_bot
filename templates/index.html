@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chatbot</title>
+    <style>
+        /* Add some basic styles here */
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .chatbox {
+            width: 300px;
+            height: 400px;
+            border: 1px solid #ddd;
+            padding: 10px;
+            overflow-y: scroll;
+            margin-bottom: 20px;
+        }
+
+        .input-container {
+            display: flex;
+            margin-top: 10px;
+        }
+
+        .input-box {
+            width: 240px;
+            padding: 5px;
+            border: 1px solid #ddd;
+        }
+
+        .send-button {
+            padding: 5px 10px;
+            border: 1px solid #ddd;
+            background-color: #4CAF50;
+            color: white;
+            cursor: pointer;
+        }
+
+        .voice-button {
+            margin-left: 10px;
+            padding: 5px 10px;
+            background-color: #f44336;
+            color: white;
+            cursor: pointer;
+        }
+
+        .message {
+            margin: 5px 0;
+        }
+    </style>
+</head>
+<body>
+
+<h1>Chatbot</h1>
+
+<div class="chatbox" id="chatbox">
+    <!-- Chat messages will appear here -->
+</div>
+
+<div class="input-container">
+    <input type="text" id="user_input" class="input-box" placeholder="Type your message...">
+    <button class="send-button" onclick="sendMessage()">Send</button>
+    <button class="voice-button" onclick="startVoiceInput()">🎤</button>
+</div>
+
+<script>
+    // Function to send user input to the backend
+    function sendMessage() {
+        const userInput = document.getElementById('user_input').value;
+        if (userInput) {
+            const chatbox = document.getElementById('chatbox');
+            chatbox.innerHTML += `<div class="message">You: ${userInput}</div>`;
+            document.getElementById('user_input').value = '';  // Clear the input field
+            
+            // Send the input to the Flask backend
+            fetch('/get_response', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ user_input: userInput })
+            })
+            .then(response => response.json())
+            .then(data => {
+                const responseMessage = data.response;
+                chatbox.innerHTML += `<div class="message">Bot: ${responseMessage}</div>`;
+                chatbox.scrollTop = chatbox.scrollHeight;  // Auto scroll to the bottom
+            });
+        }
+    }
+
+    // Function to start voice input (uses Web Speech API)
+    function startVoiceInput() {
+        const recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
+        recognition.start();
+
+        recognition.onresult = function(event) {
+            const userInput = event.results[0][0].transcript;
+            document.getElementById('user_input').value = userInput;
+            sendMessage();  // Send the voice input to the backend
+        };
+
+        recognition.onerror = function(event) {
+            alert("Sorry, I couldn't hear you properly.");
+        };
+    }
+</script>
+
+</body>
+</html>
